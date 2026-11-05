@@ -109,6 +109,7 @@ python-quiz/
 ├── 8bit/                # 8bit 라이브러리 항목 (표지, 매뉴얼, 제작기)
 ├── docs/screenshots/    # 실행 화면
 ├── .gitignore
+├── architecture.md      # 요구사항과 코드의 대응, 핵심 코드 설명
 └── README.md
 ```
 
@@ -162,6 +163,8 @@ python-quiz/
 ```
 
 ## 설계 설명
+
+요구사항이 코드 어디에 반영되어 있는지와 핵심 코드는 [architecture.md](architecture.md)에 정리했습니다.
 
 ### 클래스를 쓴 이유
 
