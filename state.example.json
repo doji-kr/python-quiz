@@ -1,0 +1,28 @@
+{
+  "quizzes": [
+    {
+      "question": "[10, 20, 30][1]의 값은?",
+      "choices": ["10", "20", "30", "오류가 난다"],
+      "answer": 2,
+      "hint": "인덱스는 0부터 셉니다."
+    }
+  ],
+  "best_score": 80,
+  "best_correct": 4,
+  "best_total": 5,
+  "history": [
+    {
+      "played_at": "2026-11-05T21:40:00+09:00",
+      "total": 5,
+      "correct": 4,
+      "hints": 0,
+      "score": 80
+    }
+  ],
+  "pet": {
+    "hunger": 4,
+    "mood": 3,
+    "generation": 1,
+    "updated_at": "2026-11-05T21:40:00+09:00"
+  }
+}

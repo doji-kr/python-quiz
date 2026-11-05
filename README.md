@@ -108,6 +108,7 @@ python-quiz/
 ├── compose.yaml         # 웹 터미널 실행 설정
 ├── 8bit/                # 8bit 라이브러리 항목 (표지, 매뉴얼, 제작기)
 ├── docs/screenshots/    # 실행 화면
+├── state.example.json   # state.json 형식 예시 (게임은 읽지 않는다)
 ├── .gitignore
 ├── architecture.md      # 요구사항과 코드의 대응, 핵심 코드 설명
 └── README.md
@@ -118,6 +119,7 @@ python-quiz/
 - **경로**: 프로젝트 루트의 `state.json`. 환경 변수 `QUIZ_STATE_PATH`로 바꿀 수 있습니다(웹 터미널은 `/data/state.json`).
 - **역할**: 프로그램을 종료해도 퀴즈, 점수, 기록, 도치 상태를 유지합니다. 실행 중 만들어지는 데이터라 Git에는 올리지 않습니다.
 - **인코딩**: UTF-8
+- **예시**: 저장소에는 `state.json` 대신 형식 예시인 `state.example.json`이 있습니다. 게임이 쓰는 파일이 아니며, 복사해 `state.json`으로 이름을 바꾸면 그 내용으로 시작합니다.
 
 | 필드 | 형식 | 설명 |
 |---|---|---|
