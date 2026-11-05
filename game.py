@@ -28,7 +28,7 @@ class QuizGame:
                 print("📂 저장된 데이터가 없어 기본 퀴즈로 시작합니다.")
                 return
             self.apply_state(data)
-        except (StateCorrupted, ValueError, TypeError) as error:
+        except (StateCorrupted, ValueError) as error:
             print(f"⚠️ state.json이 손상되어 기본 퀴즈로 복구합니다. ({error})")
             self.recover()
             return
@@ -39,7 +39,10 @@ class QuizGame:
 
     def apply_state(self, data):
         """읽어 온 데이터를 검사하고, 모두 올바를 때만 게임에 반영한다."""
-        quizzes = [Quiz.from_dict(item) for item in data["quizzes"]]
+        items = data.get("quizzes")
+        if not isinstance(items, list):
+            raise ValueError("quizzes는 목록이어야 합니다")
+        quizzes = [Quiz.from_dict(item) for item in items]
         best_score = data.get("best_score")
         best_correct = data.get("best_correct", 0)
         best_total = data.get("best_total", 0)
