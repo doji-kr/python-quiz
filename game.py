@@ -1,6 +1,7 @@
 """게임 전체의 진행을 맡는다. 메뉴, 출제, 점수를 관리한다."""
 
 import random
+from contextlib import contextmanager
 from datetime import datetime
 
 from console import read_number, read_optional_text, read_text
@@ -93,6 +94,23 @@ class QuizGame:
         self.pet = Dotch()
         self.save()
 
+    def refresh(self):
+        """다른 접속자가 저장한 최신 상태를 읽어 온다. 읽지 못하면 지금 상태를 유지한다."""
+        try:
+            data = self.store.load()
+            if data is not None:
+                self.apply_state(data)
+        except (StateCorrupted, ValueError, OSError):
+            pass
+
+    @contextmanager
+    def shared_update(self):
+        """잠근 채 최신 상태를 읽고, 블록 안에서 바꾼 뒤 저장한다."""
+        with self.store.lock():
+            self.refresh()
+            yield
+            self.save()
+
     def save(self):
         """현재 상태를 저장한다. 실패해도 게임은 계속한다."""
         data = {
@@ -116,6 +134,7 @@ class QuizGame:
         return "최고점수 없음" if self.best_score is None else f"최고점수 {self.best_score}점"
 
     def show_menu(self):
+        self.refresh()
         print(LINE)
         print("        🎯 도치의 파이썬 퀴즈 🎯")
         print(LINE)
@@ -144,7 +163,8 @@ class QuizGame:
         elif choice == 6:
             self.show_history()
         elif choice == 7:
-            self.save()
+            with self.shared_update():
+                pass
             print("👋 게임을 종료합니다.")
             self.running = False
         else:
@@ -168,13 +188,14 @@ class QuizGame:
         print(LINE)
         score = max(0, correct * 100 // total - hints * HINT_PENALTY)
         print(f"🏆 결과: {total}문제 중 {correct}문제 정답! ({score}점, 힌트 {hints}회)")
-        self.record(score, correct, total, hints)
-        self.pet.reward(correct, correct == total, self.now())
+        with self.shared_update():
+            self.record(score, correct, total, hints)
+            self.pet.reward(correct, correct == total, self.now())
+            is_best = self.update_best(score, correct, total)
         if correct:
             print(f"🍚 도치가 정답 {correct}개만큼 밥을 먹었습니다!")
-        if self.update_best(score, correct, total):
+        if is_best:
             print("🎉 새로운 최고 점수입니다!")
-        self.save()
         print(LINE)
 
     def update_best(self, score, correct, total):
@@ -227,8 +248,8 @@ class QuizGame:
         choices = [read_text(f"선택지 {index}: ") for index in range(1, Quiz.CHOICE_COUNT + 1)]
         answer = read_number(f"정답 번호 (1-{Quiz.CHOICE_COUNT}): ", 1, Quiz.CHOICE_COUNT)
         hint = read_optional_text("힌트 (없으면 Enter): ")
-        self.quizzes.append(Quiz(question, choices, answer, hint))
-        self.save()
+        with self.shared_update():
+            self.quizzes.append(Quiz(question, choices, answer, hint))
         print("\n✅ 퀴즈가 추가되었습니다!\n")
 
     def list_quizzes(self):
@@ -252,9 +273,16 @@ class QuizGame:
         if number == 0:
             print("↩️ 삭제를 취소했습니다.")
             return
-        removed = self.quizzes.pop(number - 1)
-        self.save()
-        print(f"🗑️ 삭제했습니다: {removed.question}")
+        target = self.quizzes[number - 1].to_dict()
+        with self.shared_update():
+            # 번호를 고르는 사이 목록이 바뀌었을 수 있어 내용으로 다시 찾는다.
+            remaining = [quiz for quiz in self.quizzes if quiz.to_dict() != target]
+            removed = len(remaining) < len(self.quizzes)
+            self.quizzes = remaining
+        if removed:
+            print(f"🗑️ 삭제했습니다: {target['question']}")
+        else:
+            print("ℹ️ 다른 접속자가 이미 삭제한 퀴즈입니다.")
 
     def show_score(self):
         if self.best_score is None:
@@ -289,4 +317,8 @@ class QuizGame:
                 self.handle_choice(read_number("선택: ", 1, 7))
         except (KeyboardInterrupt, EOFError):
             print("\n👋 입력이 중단되어 저장 후 게임을 종료합니다.")
-            self.save()
+            try:
+                with self.shared_update():
+                    pass
+            except KeyboardInterrupt:
+                pass

@@ -1,7 +1,8 @@
 # 실행 중 만들어지는 데이터
 state.json
 state.json.lock
-state.json.corrupt*
+state.json.corrupt
+state.json.*.tmp
 
 # Python
 __pycache__/
