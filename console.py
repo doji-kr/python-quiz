@@ -1,5 +1,10 @@
 """터미널 입력을 한곳에서 처리한다. 잘못된 입력은 안내 후 다시 묻는다."""
 
+try:
+    import readline  # noqa: F401  input()에서 한글을 지울 때 글자 폭을 바르게 맞춘다.
+except ImportError:  # Windows에는 없다. 없어도 입력은 동작한다.
+    pass
+
 
 def read_text(prompt):
     """비어 있지 않은 문자열을 받을 때까지 반복해서 묻는다."""

@@ -47,10 +47,10 @@ class Dotch:
             print(f"  도치 {self.generation}세대가 떠났습니다. 정답을 맞히면 새 도치가 옵니다.")
             return
         hunger, mood = self.hearts(now)
-        face = "^_^" if hunger + mood >= self.MAX_HEARTS else "-_-" if hunger + mood else "x_x"
-        print(f"   ,/|\\|/|\\,    도치 {self.generation}세대")
-        print(f"  ( {face} )|\\|/)   밥   {self.heart_bar(hunger)}")
-        print(f"   `u-----u'     기분 {self.heart_bar(mood)}")
+        eyes = "^" if hunger + mood >= self.MAX_HEARTS else "-" if hunger + mood else "x"
+        print(f"     ▄▄████▄▄       도치 {self.generation}세대")
+        print(f"   ███ {eyes}██{eyes} ███     밥   {self.heart_bar(hunger)}")
+        print(f"     █▀    ▀█       기분 {self.heart_bar(mood)}")
 
     def heart_bar(self, count):
         return "♥" * count + "♡" * (self.MAX_HEARTS - count)

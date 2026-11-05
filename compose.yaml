@@ -1,0 +1,25 @@
+# 웹 터미널로 게임을 실행한다. 실행: docker compose up -d --build
+services:
+  python-quiz:
+    build:
+      context: .
+      platforms: [linux/amd64]
+    image: python-quiz:local
+    container_name: python-quiz
+    platform: linux/amd64
+    restart: unless-stopped
+    cpu_shares: 256
+    mem_limit: 256m
+    ports:
+      - "${QUIZ_PORT:-8087}:7681"
+    volumes:
+      - quiz-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:7681/', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  quiz-data:
