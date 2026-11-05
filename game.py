@@ -195,13 +195,24 @@ class QuizGame:
             self.record(score, correct, total, hints)
             self.pet.reward(correct, correct == total, self.now())
             is_best = self.update_best(score, correct, total)
-        if self.device and not self.device.reward(correct, total):
-            print("⚠️  기기에 결과를 전하지 못했습니다.")
+        if self.device:
+            self.report_to_device(correct, total)
         elif correct:
             print(f"🍚 도치가 정답 {correct}개만큼 밥을 먹었습니다!")
         if is_best:
             print("🎉 새로운 최고 점수입니다!")
         print(LINE)
+
+    def report_to_device(self, correct, total):
+        """기기에 결과를 전하고, 기기가 실제로 한 일을 알려 준다."""
+        result = self.device.reward(correct, total)
+        if result is None:
+            print("⚠️  기기에 결과를 전하지 못했습니다.")
+            return
+        if result.get("meals"):
+            print(f"🍚 기기의 도치가 밥을 {result['meals']}번 먹었습니다!")
+        if result.get("refused"):
+            print(f"📟 기기의 도치: {result['refused']}")
 
     def update_best(self, score, correct, total):
         """최고 점수를 넘었으면 갱신하고 True를 돌려준다."""
