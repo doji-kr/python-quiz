@@ -1,5 +1,7 @@
 """게임 전체의 진행을 맡는다. 메뉴, 출제, 점수를 관리한다."""
 
+import random
+
 from console import read_number, read_text
 from default_quizzes import create_default_quizzes
 from quiz import Quiz
@@ -112,15 +114,15 @@ class QuizGame:
             print("🚧 아직 준비 중인 기능입니다.")
 
     def play(self):
-        """모든 퀴즈를 차례로 출제하고 결과를 보여 준다."""
+        """고른 수만큼 퀴즈를 무작위로 출제하고 결과를 보여 준다."""
         if not self.quizzes:
             print("📭 등록된 퀴즈가 없습니다. 먼저 퀴즈를 추가하세요.")
             return
 
-        total = len(self.quizzes)
+        total = read_number(f"몇 문제를 풀까요? (1-{len(self.quizzes)}): ", 1, len(self.quizzes))
         print(f"\n📝 퀴즈를 시작합니다! (총 {total}문제)\n")
         correct = 0
-        for number, quiz in enumerate(self.quizzes, start=1):
+        for number, quiz in enumerate(random.sample(self.quizzes, total), start=1):
             print(THIN_LINE)
             if self.ask(quiz, number):
                 correct += 1
