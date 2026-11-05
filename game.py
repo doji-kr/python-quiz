@@ -21,6 +21,7 @@ class QuizGame:
 
     def __init__(self, store, device=None):
         self.device = device
+        self.unsaved = False
         self.store = store
         self.quizzes = create_default_quizzes()
         self.best_score = None
@@ -97,6 +98,8 @@ class QuizGame:
 
     def refresh(self):
         """다른 접속자가 저장한 최신 상태를 읽어 온다. 읽지 못하면 지금 상태를 유지한다."""
+        if self.unsaved:  # 아직 저장하지 못한 변경을 옛 파일로 덮어쓰지 않는다.
+            return
         try:
             data = self.store.load()
             if data is not None:
@@ -124,7 +127,9 @@ class QuizGame:
         }
         try:
             self.store.save(data)
+            self.unsaved = False
         except OSError as error:
+            self.unsaved = True
             print(f"⚠️ 저장하지 못했습니다. ({error})")
 
     @staticmethod
