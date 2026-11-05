@@ -1,12 +1,17 @@
 """게임 전체의 진행을 맡는다. 메뉴, 출제, 점수를 관리한다."""
 
-from console import read_number, read_text
+import random
+from datetime import datetime
+
+from console import read_number, read_optional_text, read_text
 from default_quizzes import create_default_quizzes
 from quiz import Quiz
 from storage import StateCorrupted
 
 LINE = "=" * 40
 THIN_LINE = "-" * 40
+HINT_PENALTY = 5
+MAX_HISTORY = 100
 
 
 class QuizGame:
@@ -18,6 +23,7 @@ class QuizGame:
         self.best_score = None
         self.best_correct = 0
         self.best_total = 0
+        self.history = []
         self.running = True
 
     def load(self):
@@ -28,7 +34,7 @@ class QuizGame:
                 print("📂 저장된 데이터가 없어 기본 퀴즈로 시작합니다.")
                 return
             self.apply_state(data)
-        except (StateCorrupted, ValueError, TypeError) as error:
+        except (StateCorrupted, ValueError) as error:
             print(f"⚠️ state.json이 손상되어 기본 퀴즈로 복구합니다. ({error})")
             self.recover()
             return
@@ -39,7 +45,10 @@ class QuizGame:
 
     def apply_state(self, data):
         """읽어 온 데이터를 검사하고, 모두 올바를 때만 게임에 반영한다."""
-        quizzes = [Quiz.from_dict(item) for item in data["quizzes"]]
+        items = data.get("quizzes")
+        if not isinstance(items, list):
+            raise ValueError("quizzes는 목록이어야 합니다")
+        quizzes = [Quiz.from_dict(item) for item in items]
         best_score = data.get("best_score")
         best_correct = data.get("best_correct", 0)
         best_total = data.get("best_total", 0)
@@ -48,10 +57,23 @@ class QuizGame:
                 raise ValueError("점수 기록은 0 이상의 정수여야 합니다")
         if best_score is not None and (type(best_score) is not int or not 0 <= best_score <= 100):
             raise ValueError("최고 점수는 0-100 사이의 정수여야 합니다")
+        history = data.get("history", [])
+        if not isinstance(history, list) or not all(self.is_record(item) for item in history):
+            raise ValueError("history 형식이 올바르지 않습니다")
         self.quizzes = quizzes
         self.best_score = best_score
         self.best_correct = best_correct
         self.best_total = best_total
+        self.history = history
+
+    @staticmethod
+    def is_record(item):
+        """게임 기록 한 건의 형식이 올바른지 확인한다."""
+        return (
+            isinstance(item, dict)
+            and isinstance(item.get("played_at"), str)
+            and all(type(item.get(key)) is int for key in ("total", "correct", "hints", "score"))
+        )
 
     def recover(self):
         """손상된 파일을 옮겨 두고 기본 데이터로 새로 저장한다."""
@@ -63,6 +85,7 @@ class QuizGame:
         self.best_score = None
         self.best_correct = 0
         self.best_total = 0
+        self.history = []
         self.save()
 
     def save(self):
@@ -72,6 +95,7 @@ class QuizGame:
             "best_score": self.best_score,
             "best_correct": self.best_correct,
             "best_total": self.best_total,
+            "history": self.history,
         }
         try:
             self.store.save(data)
@@ -89,7 +113,9 @@ class QuizGame:
         print("2. 퀴즈 추가")
         print("3. 퀴즈 목록")
         print("4. 점수 확인")
-        print("5. 종료")
+        print("5. 퀴즈 삭제")
+        print("6. 게임 기록")
+        print("7. 종료")
         print(LINE)
 
     def handle_choice(self, choice):
@@ -102,6 +128,10 @@ class QuizGame:
         elif choice == 4:
             self.show_score()
         elif choice == 5:
+            self.delete_quiz()
+        elif choice == 6:
+            self.show_history()
+        elif choice == 7:
             self.save()
             print("👋 게임을 종료합니다.")
             self.running = False
@@ -109,23 +139,27 @@ class QuizGame:
             print("🚧 아직 준비 중인 기능입니다.")
 
     def play(self):
-        """모든 퀴즈를 차례로 출제하고 결과를 보여 준다."""
+        """고른 수만큼 퀴즈를 무작위로 출제하고 결과를 보여 준다."""
         if not self.quizzes:
             print("📭 등록된 퀴즈가 없습니다. 먼저 퀴즈를 추가하세요.")
             return
 
-        total = len(self.quizzes)
+        total = read_number(f"몇 문제를 풀까요? (1-{len(self.quizzes)}): ", 1, len(self.quizzes))
         print(f"\n📝 퀴즈를 시작합니다! (총 {total}문제)\n")
         correct = 0
-        for number, quiz in enumerate(self.quizzes, start=1):
+        hints = 0
+        for number, quiz in enumerate(random.sample(self.quizzes, total), start=1):
             print(THIN_LINE)
-            if self.ask(quiz, number):
-                correct += 1
+            is_correct, used_hint = self.ask(quiz, number)
+            correct += is_correct
+            hints += used_hint
         print(LINE)
-        score = correct * 100 // total
-        print(f"🏆 결과: {total}문제 중 {correct}문제 정답! ({score}점)")
+        score = max(0, correct * 100 // total - hints * HINT_PENALTY)
+        print(f"🏆 결과: {total}문제 중 {correct}문제 정답! ({score}점, 힌트 {hints}회)")
+        self.record(score, correct, total, hints)
         if self.update_best(score, correct, total):
             print("🎉 새로운 최고 점수입니다!")
+        self.save()
         print(LINE)
 
     def update_best(self, score, correct, total):
@@ -135,18 +169,41 @@ class QuizGame:
         self.best_score = score
         self.best_correct = correct
         self.best_total = total
-        self.save()
         return True
 
+    def record(self, score, correct, total, hints):
+        """게임 기록을 남긴다. 파일이 끝없이 커지지 않게 최근 기록만 둔다."""
+        self.history.append(
+            {
+                "played_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+                "total": total,
+                "correct": correct,
+                "hints": hints,
+                "score": score,
+            }
+        )
+        del self.history[:-MAX_HISTORY]
+
     def ask(self, quiz, number):
-        """한 문제를 출제하고 맞혔는지 돌려준다."""
+        """한 문제를 출제하고 (맞혔는지, 힌트를 봤는지)를 돌려준다."""
         quiz.show(number)
-        answer = read_number("정답 입력: ", 1, quiz.CHOICE_COUNT)
+        used_hint = False
+        while True:
+            answer = read_number(
+                f"정답 입력 (h: 힌트, -{HINT_PENALTY}점): ", 1, quiz.CHOICE_COUNT, extras=("h",)
+            )
+            if answer != "h":
+                break
+            if quiz.hint is None:
+                print("💡 이 문제에는 힌트가 없습니다.")
+            else:
+                print(f"💡 힌트: {quiz.hint}")
+                used_hint = True
         if quiz.is_correct(answer):
             print("✅ 정답입니다!\n")
-            return True
+            return True, used_hint
         print(f"❌ 오답입니다. 정답은 {quiz.answer}번입니다.\n")
-        return False
+        return False, used_hint
 
     def add_quiz(self):
         """사용자에게 문제, 선택지, 정답을 입력받아 퀴즈를 등록한다."""
@@ -154,7 +211,8 @@ class QuizGame:
         question = read_text("문제를 입력하세요: ")
         choices = [read_text(f"선택지 {index}: ") for index in range(1, Quiz.CHOICE_COUNT + 1)]
         answer = read_number(f"정답 번호 (1-{Quiz.CHOICE_COUNT}): ", 1, Quiz.CHOICE_COUNT)
-        self.quizzes.append(Quiz(question, choices, answer))
+        hint = read_optional_text("힌트 (없으면 Enter): ")
+        self.quizzes.append(Quiz(question, choices, answer, hint))
         self.save()
         print("\n✅ 퀴즈가 추가되었습니다!\n")
 
@@ -169,6 +227,20 @@ class QuizGame:
             print(f"[{number}] {quiz.question}")
         print(THIN_LINE)
 
+    def delete_quiz(self):
+        """목록에서 번호를 골라 퀴즈를 지운다. 0을 고르면 취소한다."""
+        if not self.quizzes:
+            print("📭 삭제할 퀴즈가 없습니다.")
+            return
+        self.list_quizzes()
+        number = read_number("삭제할 번호 (0: 취소): ", 0, len(self.quizzes))
+        if number == 0:
+            print("↩️ 삭제를 취소했습니다.")
+            return
+        removed = self.quizzes.pop(number - 1)
+        self.save()
+        print(f"🗑️ 삭제했습니다: {removed.question}")
+
     def show_score(self):
         if self.best_score is None:
             print("📭 아직 퀴즈를 풀지 않았습니다.")
@@ -178,13 +250,28 @@ class QuizGame:
             f"({self.best_total}문제 중 {self.best_correct}문제 정답)\n"
         )
 
+    def show_history(self):
+        """최근 게임 기록을 새로운 순서로 보여 준다."""
+        if not self.history:
+            print("📭 아직 게임 기록이 없습니다.")
+            return
+        print(f"\n📜 최근 게임 기록 ({len(self.history)}건)\n")
+        print(THIN_LINE)
+        for item in reversed(self.history[-10:]):
+            print(
+                f"{item['played_at'][:16].replace('T', ' ')}  "
+                f"{item['total']}문제 중 {item['correct']}개 정답  "
+                f"힌트 {item['hints']}회  {item['score']}점"
+            )
+        print(THIN_LINE)
+
     def run(self):
         """메뉴를 반복한다. Ctrl+C나 입력 종료가 와도 안전하게 끝낸다."""
         self.load()
         try:
             while self.running:
                 self.show_menu()
-                self.handle_choice(read_number("선택: ", 1, 5))
+                self.handle_choice(read_number("선택: ", 1, 7))
         except (KeyboardInterrupt, EOFError):
             print("\n👋 입력이 중단되어 저장 후 게임을 종료합니다.")
             self.save()

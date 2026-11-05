@@ -2,14 +2,15 @@
 
 
 class Quiz:
-    """문제, 선택지 4개, 정답 번호(1~4)를 가진 퀴즈."""
+    """문제, 선택지 4개, 정답 번호(1~4), 힌트(없어도 됨)를 가진 퀴즈."""
 
     CHOICE_COUNT = 4
 
-    def __init__(self, question, choices, answer):
+    def __init__(self, question, choices, answer, hint=None):
         self.question = question
         self.choices = choices
         self.answer = answer
+        self.hint = hint
 
     def show(self, number):
         """문제와 선택지를 출력한다. number는 화면에 보일 문제 번호다."""
@@ -24,7 +25,10 @@ class Quiz:
         return answer == self.answer
 
     def to_dict(self):
-        return {"question": self.question, "choices": self.choices, "answer": self.answer}
+        data = {"question": self.question, "choices": self.choices, "answer": self.answer}
+        if self.hint:
+            data["hint"] = self.hint
+        return data
 
     @classmethod
     def from_dict(cls, data):
@@ -43,4 +47,7 @@ class Quiz:
             raise ValueError(f"선택지는 문자열 {cls.CHOICE_COUNT}개여야 합니다")
         if type(answer) is not int or not 1 <= answer <= cls.CHOICE_COUNT:
             raise ValueError(f"정답은 1-{cls.CHOICE_COUNT} 사이의 정수여야 합니다")
-        return cls(question, choices, answer)
+        hint = data.get("hint")
+        if hint is not None and not isinstance(hint, str):
+            raise ValueError("힌트는 문자열이어야 합니다")
+        return cls(question, choices, answer, hint)

@@ -11,11 +11,19 @@ def read_text(prompt):
         print("⚠️ 빈 입력입니다. 내용을 입력하세요.")
 
 
-def read_number(prompt, low, high):
-    """low 이상 high 이하의 정수를 받을 때까지 반복해서 묻는다."""
+def read_optional_text(prompt):
+    """비워 두어도 되는 문자열을 묻는다. 비어 있으면 None을 돌려준다."""
+    text = input(prompt).strip().encode("utf-8", "replace").decode("utf-8")
+    return text or None
+
+
+def read_number(prompt, low, high, extras=()):
+    """low 이상 high 이하의 정수를 받을 때까지 묻는다. extras의 글자도 그대로 돌려준다."""
     guide = f"⚠️ 잘못된 입력입니다. {low}-{high} 사이의 숫자를 입력하세요."
     while True:
         text = input(prompt).strip()
+        if text.lower() in extras:
+            return text.lower()
         try:
             number = int(text)
         except ValueError:
