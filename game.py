@@ -2,13 +2,14 @@
 
 import random
 
-from console import read_number, read_text
+from console import read_number, read_optional_text, read_text
 from default_quizzes import create_default_quizzes
 from quiz import Quiz
 from storage import StateCorrupted
 
 LINE = "=" * 40
 THIN_LINE = "-" * 40
+HINT_PENALTY = 5
 
 
 class QuizGame:
@@ -122,13 +123,15 @@ class QuizGame:
         total = read_number(f"몇 문제를 풀까요? (1-{len(self.quizzes)}): ", 1, len(self.quizzes))
         print(f"\n📝 퀴즈를 시작합니다! (총 {total}문제)\n")
         correct = 0
+        hints = 0
         for number, quiz in enumerate(random.sample(self.quizzes, total), start=1):
             print(THIN_LINE)
-            if self.ask(quiz, number):
-                correct += 1
+            is_correct, used_hint = self.ask(quiz, number)
+            correct += is_correct
+            hints += used_hint
         print(LINE)
-        score = correct * 100 // total
-        print(f"🏆 결과: {total}문제 중 {correct}문제 정답! ({score}점)")
+        score = max(0, correct * 100 // total - hints * HINT_PENALTY)
+        print(f"🏆 결과: {total}문제 중 {correct}문제 정답! ({score}점, 힌트 {hints}회)")
         if self.update_best(score, correct, total):
             print("🎉 새로운 최고 점수입니다!")
         print(LINE)
@@ -144,14 +147,25 @@ class QuizGame:
         return True
 
     def ask(self, quiz, number):
-        """한 문제를 출제하고 맞혔는지 돌려준다."""
+        """한 문제를 출제하고 (맞혔는지, 힌트를 봤는지)를 돌려준다."""
         quiz.show(number)
-        answer = read_number("정답 입력: ", 1, quiz.CHOICE_COUNT)
+        used_hint = False
+        while True:
+            answer = read_number(
+                f"정답 입력 (h: 힌트, -{HINT_PENALTY}점): ", 1, quiz.CHOICE_COUNT, extras=("h",)
+            )
+            if answer != "h":
+                break
+            if quiz.hint is None:
+                print("💡 이 문제에는 힌트가 없습니다.")
+            else:
+                print(f"💡 힌트: {quiz.hint}")
+                used_hint = True
         if quiz.is_correct(answer):
             print("✅ 정답입니다!\n")
-            return True
+            return True, used_hint
         print(f"❌ 오답입니다. 정답은 {quiz.answer}번입니다.\n")
-        return False
+        return False, used_hint
 
     def add_quiz(self):
         """사용자에게 문제, 선택지, 정답을 입력받아 퀴즈를 등록한다."""
@@ -159,7 +173,8 @@ class QuizGame:
         question = read_text("문제를 입력하세요: ")
         choices = [read_text(f"선택지 {index}: ") for index in range(1, Quiz.CHOICE_COUNT + 1)]
         answer = read_number(f"정답 번호 (1-{Quiz.CHOICE_COUNT}): ", 1, Quiz.CHOICE_COUNT)
-        self.quizzes.append(Quiz(question, choices, answer))
+        hint = read_optional_text("힌트 (없으면 Enter): ")
+        self.quizzes.append(Quiz(question, choices, answer, hint))
         self.save()
         print("\n✅ 퀴즈가 추가되었습니다!\n")
 
