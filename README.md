@@ -1,5 +1,3 @@
-edit
-
 # python-quiz
 
 터미널에서 파이썬 퀴즈를 풀어 도치를 키우는 게임입니다. Python 3.10 이상과 표준 라이브러리만으로 동작합니다.
@@ -255,11 +253,19 @@ git push origin main feature/bonus  # 원격에 올림
 
 ### clone과 pull 실습
 
-![clone과 pull 실행 화면](docs/screenshots/clone_pull.png)
+별도 폴더 `~/test`에 저장소를 clone했습니다. 앞선 `git pull` 두 번은 저장소 밖인 `~/test`에서 실행해 `not a git repository` 오류가 났고, `cd python-quiz`로 들어간 뒤 성공했습니다.
 
-별도 폴더 `~/test`에 저장소를 clone한 뒤, 원래 폴더에서 올린 변경(`5709479..b92d38b`)을 복제본에서 `git pull`로 받았습니다. 화면의 앞선 `git pull` 두 번은 저장소 밖인 `~/test`에서 실행해 `not a git repository` 오류가 났고, `cd python-quiz`로 들어간 뒤 성공했습니다.
+![clone 실행 화면](docs/screenshots/clone_pull.png)
 
-반대 방향인 복제본에서 README를 고쳐 push하고 원래 폴더에서 pull한 기록은 커밋 `f3e5f39`입니다.
+복제본에서 README를 고쳐 커밋하고 push했습니다. 그 사이 원격에 다른 커밋이 올라와 이력이 갈라졌기 때문에, `git pull --rebase`로 원격 커밋 위에 다시 얹은 뒤 올렸습니다.
+
+![복제본에서 push](docs/screenshots/clone_push.png)
+
+원래 폴더 `~/python-quiz`에서 `git pull`로 같은 변경(`3d7c55d..6a227c2`)을 받아, 두 폴더가 원격을 통해 이어지는 것을 확인했습니다.
+
+![원래 폴더에서 pull](docs/screenshots/original_pull.png)
+
+이때 README에 넣은 `edit` 줄은 실습용이어서 다음 커밋에서 지웠습니다.
 
 ### 커밋 이력
 
