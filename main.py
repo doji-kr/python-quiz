@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 
+from device import Device
 from game import QuizGame
 from storage import StateStore
 
@@ -11,7 +12,7 @@ STATE_PATH = Path(os.environ.get("QUIZ_STATE_PATH", Path(__file__).resolve().par
 
 
 def main():
-    QuizGame(StateStore(STATE_PATH)).run()
+    QuizGame(StateStore(STATE_PATH), Device.from_env()).run()
 
 
 if __name__ == "__main__":

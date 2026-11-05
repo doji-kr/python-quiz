@@ -19,7 +19,8 @@ MAX_HISTORY = 100
 class QuizGame:
     """메뉴를 보여 주고 선택에 따라 기능을 실행한다."""
 
-    def __init__(self, store):
+    def __init__(self, store, device=None):
+        self.device = device
         self.store = store
         self.quizzes = create_default_quizzes()
         self.best_score = None
@@ -138,7 +139,9 @@ class QuizGame:
         print(LINE)
         print("        🎯 도치의 파이썬 퀴즈 🎯")
         print(LINE)
-        self.pet.show(self.now())
+        # 기기와 함께 띄우면 도치는 기기 화면에 있다.
+        if not self.device:
+            self.pet.show(self.now())
         print(LINE)
         print("1. 퀴즈 풀기")
         print("2. 퀴즈 추가")
@@ -192,7 +195,9 @@ class QuizGame:
             self.record(score, correct, total, hints)
             self.pet.reward(correct, correct == total, self.now())
             is_best = self.update_best(score, correct, total)
-        if correct:
+        if self.device and not self.device.reward(correct, total):
+            print("⚠️  기기에 결과를 전하지 못했습니다.")
+        elif correct:
             print(f"🍚 도치가 정답 {correct}개만큼 밥을 먹었습니다!")
         if is_best:
             print("🎉 새로운 최고 점수입니다!")

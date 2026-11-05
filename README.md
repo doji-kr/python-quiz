@@ -89,6 +89,7 @@ python-quiz/
 ├── game.py              # QuizGame: 메뉴, 출제, 점수, 기록, 저장 흐름
 ├── quiz.py              # Quiz: 문제 한 개의 출력, 정답 확인, 변환
 ├── pet.py               # Dotch: 도치의 하트와 세대
+├── device.py            # Device: 함께 띄운 기기에 라운드 결과 전달 (선택)
 ├── storage.py           # StateStore: state.json 읽기, 쓰기, 잠금
 ├── console.py           # 입력 처리 공통 함수
 ├── default_quizzes.py   # 기본 퀴즈 8개
