@@ -1,0 +1,14 @@
+# 실행 중 만들어지는 데이터
+state.json
+state.json.lock
+state.json.corrupt*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# 편집기와 OS
+.vscode/
+.idea/
+.DS_Store
