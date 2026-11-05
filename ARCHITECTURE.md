@@ -46,14 +46,14 @@
 | 퀴즈 풀기와 정답 판정 | `QuizGame.play`, `ask`, `Quiz.is_correct` | [3.3](#33-퀴즈-풀기와-점수) |
 | 퀴즈 추가 | `QuizGame.add_quiz` | [3.4](#34-퀴즈-추가) |
 | 최고 점수 갱신 | `QuizGame.update_best`, `show_score` | [3.3](#33-퀴즈-풀기와-점수) |
-| 프로젝트 루트의 `state.json` | `main.py`의 `STATE_PATH` | [3.1](#31-시작과-저장-경로) |
+| 프로젝트 루트의 `state.json` | `main.py`의 `STATE_PATH`, `QuizGame.save` | 경로는 [3.1](#31-시작과-저장-경로), 생성 과정은 [3.6](#36-statejson이-만들어지는-과정) |
 | UTF-8 저장 | `StateStore.load`, `save` | `encoding="utf-8"`, `ensure_ascii=False` |
-| 다시 실행해도 데이터 유지 | `QuizGame.load`, `save` | [3.6](#36-안전한-저장) |
-| 파일이 없을 때 처리 | `QuizGame.load` | 안내 후 기본 퀴즈로 시작 ([3.7](#37-파일이-없거나-손상됐을-때)) |
-| 파일이 손상됐을 때 처리 | `QuizGame.load`, `recover`, `apply_state` | 안내 후 옮겨 두고 기본값으로 복구 ([3.7](#37-파일이-없거나-손상됐을-때)) |
+| 다시 실행해도 데이터 유지 | `QuizGame.load`, `save` | [3.7](#37-안전한-저장) |
+| 파일이 없을 때 처리 | `QuizGame.load` | 안내 후 기본 퀴즈로 시작 ([3.8](#38-파일이-없거나-손상됐을-때)) |
+| 파일이 손상됐을 때 처리 | `QuizGame.load`, `recover`, `apply_state` | 안내 후 옮겨 두고 기본값으로 복구 ([3.8](#38-파일이-없거나-손상됐을-때)) |
 | 입력 공백 제거 | `console.py` | `input(prompt).strip()` |
 | `abc`, 범위 밖, 빈 입력 재입력 | `read_number`, `read_text` | [3.5](#35-입력-검증) |
-| Ctrl+C, EOF 안전 종료와 저장 | `QuizGame.run` | [3.8](#38-안전한-종료) |
+| Ctrl+C, EOF 안전 종료와 저장 | `QuizGame.run` | [3.9](#39-안전한-종료) |
 
 ### 보너스
 
@@ -71,9 +71,9 @@
 
 | 요구사항 | 확인 방법 | 상태 |
 |---|---|---|
-| 의미 있는 커밋 10개 이상 | `git log --oneline` | 이 문서를 쓴 시점에 28개 |
+| 의미 있는 커밋 10개 이상 | [`git_log.png`](docs/screenshots/git_log.png) | 캡처 시점에 30개 |
 | 커밋 메시지 규칙 | [README의 커밋 규칙](README.md#커밋-규칙) | `Feat:`, `Fix:`, `Docs:`, `Refactor:`, `Chore:` |
-| 브랜치와 병합 | `git log --graph` | `feature/play-quiz`, `feature/bonus`를 병합 |
+| 브랜치와 병합 | [`git_log.png`](docs/screenshots/git_log.png) | `feature/play-quiz`, `feature/bonus`를 병합 |
 | clone과 pull 실습 | 커밋 `f3e5f39` | 복제본에서 수정해 push하고 원래 폴더에서 pull 했습니다. 실행 화면 캡처는 별도로 제출합니다 |
 | README 필수 항목 | [README.md](README.md) | 개요, 주제와 이유, 실행 방법, 기능, 파일 구조, `state.json` 설명 |
 | 실행 화면 | `docs/screenshots/` | `menu`, `play`, `add_quiz`, `score` |
@@ -180,7 +180,63 @@ def read_number(prompt, low, high, extras=()):
         print(guide)
 ```
 
-### 3.6 안전한 저장
+### 3.6 state.json이 만들어지는 과정
+
+`state.json`은 저장소에 없고, 게임이 처음 저장할 때 만들어집니다. 실행 순서는 다음과 같습니다.
+
+```
+python3 main.py
+  → StateStore.load   파일이 없으면 None을 돌려준다
+  → QuizGame.load     안내를 출력하고, __init__에서 만든 기본 퀴즈로 시작한다 (아직 파일 없음)
+  → 퀴즈 추가, 라운드 종료, 메뉴 7, Ctrl+C, EOF
+  → shared_update → QuizGame.save → StateStore.save   이때 state.json이 생긴다
+```
+
+**1단계: 파일이 없는 것은 오류가 아닙니다.** `StateStore.load`가 `FileNotFoundError`를 잡아 `None`을 돌려주므로, 처음 실행도 정상 흐름으로 이어집니다.
+
+```python
+        try:
+            with open(self.path, encoding="utf-8") as file:
+                data = json.load(file)
+        except FileNotFoundError:
+            return None
+```
+
+**2단계: 처음에는 메모리의 기본값으로 시작합니다.** `QuizGame.__init__`이 파일과 상관없이 기본 퀴즈를 준비해 둡니다.
+
+```python
+        self.quizzes = create_default_quizzes()
+        self.best_score = None
+        self.best_correct = 0
+        self.best_total = 0
+        self.history = []
+        self.pet = Dotch()
+```
+
+**3단계: 저장할 내용을 딕셔너리로 모읍니다.** `QuizGame.save`가 게임 상태를 JSON으로 바꿀 수 있는 형태로 만들어 `StateStore.save`에 넘깁니다. 이 키들이 `state.json`의 최상위 필드입니다. 실제로 파일을 쓰는 코드는 [3.7](#37-안전한-저장)에 있습니다.
+
+```python
+        data = {
+            "quizzes": [quiz.to_dict() for quiz in self.quizzes],
+            "best_score": self.best_score,
+            "best_correct": self.best_correct,
+            "best_total": self.best_total,
+            "history": self.history,
+            "pet": self.pet.to_dict(),
+        }
+```
+
+**4단계: 변경이 없어도 종료할 때 저장합니다.** 블록 안이 `pass`뿐이어도 `shared_update`가 끝에서 `save`를 부르므로, 아무것도 하지 않고 메뉴 `7`로 끝내도 파일이 생깁니다.
+
+```python
+        elif choice == 7:
+            with self.shared_update():
+                pass
+```
+
+손상된 파일을 복구할 때도 `QuizGame.recover`가 `save`를 불러 기본값으로 새 파일을 만듭니다. 잠금을 쓸 수 있는 환경에서는 저장할 때 잠금 전용 파일 `state.json.lock`도 함께 생기며, 둘 다 `.gitignore`에 들어 있어 Git에는 올라가지 않습니다. 형식이 궁금하면 [`state.example.json`](state.example.json)을 보면 됩니다.
+
+### 3.7 안전한 저장
 
 파일에 바로 쓰다가 프로그램이 꺼지면 `state.json`이 반쯤 쓰인 채 남습니다. 그래서 임시 파일에 다 쓴 뒤 `os.replace`로 한 번에 바꿔치기합니다. `ensure_ascii=False`는 한글을 `\uXXXX`가 아닌 글자 그대로 저장합니다.
 
@@ -212,7 +268,7 @@ def read_number(prompt, low, high, extras=()):
             return
 ```
 
-### 3.7 파일이 없거나 손상됐을 때
+### 3.8 파일이 없거나 손상됐을 때
 
 세 가지 경우를 나눕니다. 파일이 없으면 처음 실행이고, 내용을 해석할 수 없으면 손상이며, 읽을 수 없으면(권한 등) 원본을 건드리지 않습니다.
 
@@ -243,7 +299,7 @@ JSON 문법이 맞아도 값이 틀리면 손상으로 봅니다. `Quiz.from_dic
 
 `isinstance(answer, int)`가 아니라 `type(...) is int`를 쓴 이유는 `True`가 `int`의 하위 타입이어서, `isinstance`로는 `"answer": true`가 통과하기 때문입니다.
 
-### 3.8 안전한 종료
+### 3.9 안전한 종료
 
 Ctrl+C는 `KeyboardInterrupt`, 입력 스트림 종료는 `EOFError`로 `input()`에서 올라옵니다. 메뉴 반복 전체를 감싸 어느 화면에서 끊겨도 저장 후 끝납니다.
 

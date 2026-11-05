@@ -110,7 +110,7 @@ python-quiz/
 ├── docs/screenshots/    # 실행 화면
 ├── state.example.json   # state.json 형식 예시 (게임은 읽지 않는다)
 ├── .gitignore
-├── architecture.md      # 요구사항과 코드의 대응, 핵심 코드 설명
+├── ARCHITECTURE.md      # 요구사항과 코드의 대응, 핵심 코드 설명
 └── README.md
 ```
 
@@ -166,7 +166,7 @@ python-quiz/
 
 ## 설계 설명
 
-요구사항이 코드 어디에 반영되어 있는지와 핵심 코드는 [architecture.md](architecture.md)에 정리했습니다.
+요구사항이 코드 어디에 반영되어 있는지와 핵심 코드는 [ARCHITECTURE.md](ARCHITECTURE.md)에 정리했습니다.
 
 ### 클래스를 쓴 이유
 
@@ -252,6 +252,10 @@ git push origin main feature/bonus  # 원격에 올림
 `--no-ff`를 쓰면 브랜치의 흔적이 그래프에 남습니다. `feature/play-quiz`와 `feature/bonus` 두 브랜치를 이렇게 병합했고, 두 브랜치 모두 원격에 남아 있습니다.
 
 ### 커밋 이력
+
+![git log 실행 화면](docs/screenshots/git_log.png)
+
+터미널에서 찍은 화면입니다. 아래는 같은 명령의 출력을 옮긴 것으로, 위 화면보다 앞선 시점의 기록입니다.
 
 `git log --oneline --graph`의 실제 출력입니다. 이 문서를 추가하기 직전 기준으로 커밋은 27개이고 그중 병합은 2개입니다.
 
