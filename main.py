@@ -1,7 +1,8 @@
 """나만의 퀴즈 게임 실행 파일."""
 
-from console import read_number
+from console import read_number, read_text
 from default_quizzes import create_default_quizzes
+from quiz import Quiz
 
 LINE = "=" * 40
 THIN_LINE = "-" * 40
@@ -28,6 +29,8 @@ class QuizGame:
     def handle_choice(self, choice):
         if choice == 1:
             self.play()
+        elif choice == 2:
+            self.add_quiz()
         elif choice == 5:
             print("👋 게임을 종료합니다.")
             self.running = False
@@ -60,6 +63,15 @@ class QuizGame:
             return True
         print(f"❌ 오답입니다. 정답은 {quiz.answer}번입니다.\n")
         return False
+
+    def add_quiz(self):
+        """사용자에게 문제, 선택지, 정답을 입력받아 퀴즈를 등록한다."""
+        print("\n📌 새로운 퀴즈를 추가합니다.\n")
+        question = read_text("문제를 입력하세요: ")
+        choices = [read_text(f"선택지 {index}: ") for index in range(1, Quiz.CHOICE_COUNT + 1)]
+        answer = read_number(f"정답 번호 (1-{Quiz.CHOICE_COUNT}): ", 1, Quiz.CHOICE_COUNT)
+        self.quizzes.append(Quiz(question, choices, answer))
+        print("\n✅ 퀴즈가 추가되었습니다!\n")
 
     def run(self):
         """메뉴를 반복한다. Ctrl+C나 입력 종료가 와도 안전하게 끝낸다."""
