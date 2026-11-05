@@ -74,7 +74,7 @@
 | 의미 있는 커밋 10개 이상 | [`git_log.png`](docs/screenshots/git_log.png) | 캡처 시점에 30개 |
 | 커밋 메시지 규칙 | [README의 커밋 규칙](README.md#커밋-규칙) | `Feat:`, `Fix:`, `Docs:`, `Refactor:`, `Chore:` |
 | 브랜치와 병합 | [`git_log.png`](docs/screenshots/git_log.png) | `feature/play-quiz`, `feature/bonus`를 병합 |
-| clone과 pull 실습 | 커밋 `f3e5f39` | 복제본에서 수정해 push하고 원래 폴더에서 pull 했습니다. 실행 화면 캡처는 별도로 제출합니다 |
+| clone과 pull 실습 | [`clone_pull.png`](docs/screenshots/clone_pull.png), 커밋 `f3e5f39` | 화면은 별도 폴더에 clone한 뒤 원래 폴더의 변경을 복제본에서 pull한 기록이고, 복제본에서 고쳐 push한 뒤 원래 폴더에서 pull한 기록은 커밋 `f3e5f39`입니다 |
 | README 필수 항목 | [README.md](README.md) | 개요, 주제와 이유, 실행 방법, 기능, 파일 구조, `state.json` 설명 |
 | 실행 화면 | `docs/screenshots/` | `menu`, `play`, `add_quiz`, `score` |
 

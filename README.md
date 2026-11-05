@@ -107,7 +107,7 @@ python-quiz/
 ├── Dockerfile           # ttyd 웹 터미널 이미지
 ├── compose.yaml         # 웹 터미널 실행 설정
 ├── 8bit/                # 8bit 라이브러리 항목 (표지, 매뉴얼, 제작기)
-├── docs/screenshots/    # 실행 화면
+├── docs/screenshots/    # 실행 화면과 Git 작업 화면
 ├── state.example.json   # state.json 형식 예시 (게임은 읽지 않는다)
 ├── .gitignore
 ├── ARCHITECTURE.md      # 요구사항과 코드의 대응, 핵심 코드 설명
@@ -250,6 +250,14 @@ git push origin main feature/bonus  # 원격에 올림
 ```
 
 `--no-ff`를 쓰면 브랜치의 흔적이 그래프에 남습니다. `feature/play-quiz`와 `feature/bonus` 두 브랜치를 이렇게 병합했고, 두 브랜치 모두 원격에 남아 있습니다.
+
+### clone과 pull 실습
+
+![clone과 pull 실행 화면](docs/screenshots/clone_pull.png)
+
+별도 폴더 `~/test`에 저장소를 clone한 뒤, 원래 폴더에서 올린 변경(`5709479..b92d38b`)을 복제본에서 `git pull`로 받았습니다. 화면의 앞선 `git pull` 두 번은 저장소 밖인 `~/test`에서 실행해 `not a git repository` 오류가 났고, `cd python-quiz`로 들어간 뒤 성공했습니다.
+
+반대 방향인 복제본에서 README를 고쳐 push하고 원래 폴더에서 pull한 기록은 커밋 `f3e5f39`입니다.
 
 ### 커밋 이력
 
