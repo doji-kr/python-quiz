@@ -3,6 +3,7 @@
 from console import read_number, read_text
 from default_quizzes import create_default_quizzes
 from quiz import Quiz
+from storage import StateCorrupted
 
 LINE = "=" * 40
 THIN_LINE = "-" * 40
@@ -11,12 +12,74 @@ THIN_LINE = "-" * 40
 class QuizGame:
     """메뉴를 보여 주고 선택에 따라 기능을 실행한다."""
 
-    def __init__(self):
+    def __init__(self, store):
+        self.store = store
         self.quizzes = create_default_quizzes()
         self.best_score = None
         self.best_correct = 0
         self.best_total = 0
         self.running = True
+
+    def load(self):
+        """저장된 데이터를 불러온다. 없거나 깨졌으면 기본 퀴즈로 시작한다."""
+        try:
+            data = self.store.load()
+            if data is None:
+                print("📂 저장된 데이터가 없어 기본 퀴즈로 시작합니다.")
+                return
+            self.apply_state(data)
+        except (StateCorrupted, ValueError, TypeError) as error:
+            print(f"⚠️ state.json이 손상되어 기본 퀴즈로 복구합니다. ({error})")
+            self.recover()
+            return
+        except OSError as error:
+            print(f"⚠️ state.json을 읽지 못해 기본 퀴즈로 시작합니다. ({error})")
+            return
+        print(f"📂 저장된 데이터를 불러왔습니다. (퀴즈 {len(self.quizzes)}개, {self.best_label()})")
+
+    def apply_state(self, data):
+        """읽어 온 데이터를 검사하고, 모두 올바를 때만 게임에 반영한다."""
+        quizzes = [Quiz.from_dict(item) for item in data["quizzes"]]
+        best_score = data.get("best_score")
+        best_correct = data.get("best_correct", 0)
+        best_total = data.get("best_total", 0)
+        for value in (best_correct, best_total):
+            if type(value) is not int or value < 0:
+                raise ValueError("점수 기록은 0 이상의 정수여야 합니다")
+        if best_score is not None and (type(best_score) is not int or not 0 <= best_score <= 100):
+            raise ValueError("최고 점수는 0-100 사이의 정수여야 합니다")
+        self.quizzes = quizzes
+        self.best_score = best_score
+        self.best_correct = best_correct
+        self.best_total = best_total
+
+    def recover(self):
+        """손상된 파일을 옮겨 두고 기본 데이터로 새로 저장한다."""
+        try:
+            self.store.set_aside()
+        except OSError as error:
+            print(f"⚠️ 손상된 파일을 옮기지 못했습니다. ({error})")
+        self.quizzes = create_default_quizzes()
+        self.best_score = None
+        self.best_correct = 0
+        self.best_total = 0
+        self.save()
+
+    def save(self):
+        """현재 상태를 저장한다. 실패해도 게임은 계속한다."""
+        data = {
+            "quizzes": [quiz.to_dict() for quiz in self.quizzes],
+            "best_score": self.best_score,
+            "best_correct": self.best_correct,
+            "best_total": self.best_total,
+        }
+        try:
+            self.store.save(data)
+        except OSError as error:
+            print(f"⚠️ 저장하지 못했습니다. ({error})")
+
+    def best_label(self):
+        return "최고점수 없음" if self.best_score is None else f"최고점수 {self.best_score}점"
 
     def show_menu(self):
         print(LINE)
@@ -39,6 +102,7 @@ class QuizGame:
         elif choice == 4:
             self.show_score()
         elif choice == 5:
+            self.save()
             print("👋 게임을 종료합니다.")
             self.running = False
         else:
@@ -71,6 +135,7 @@ class QuizGame:
         self.best_score = score
         self.best_correct = correct
         self.best_total = total
+        self.save()
         return True
 
     def ask(self, quiz, number):
@@ -90,6 +155,7 @@ class QuizGame:
         choices = [read_text(f"선택지 {index}: ") for index in range(1, Quiz.CHOICE_COUNT + 1)]
         answer = read_number(f"정답 번호 (1-{Quiz.CHOICE_COUNT}): ", 1, Quiz.CHOICE_COUNT)
         self.quizzes.append(Quiz(question, choices, answer))
+        self.save()
         print("\n✅ 퀴즈가 추가되었습니다!\n")
 
     def list_quizzes(self):
@@ -114,9 +180,11 @@ class QuizGame:
 
     def run(self):
         """메뉴를 반복한다. Ctrl+C나 입력 종료가 와도 안전하게 끝낸다."""
+        self.load()
         try:
             while self.running:
                 self.show_menu()
                 self.handle_choice(read_number("선택: ", 1, 5))
         except (KeyboardInterrupt, EOFError):
-            print("\n👋 입력이 중단되어 게임을 종료합니다.")
+            print("\n👋 입력이 중단되어 저장 후 게임을 종료합니다.")
+            self.save()

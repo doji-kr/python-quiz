@@ -22,3 +22,25 @@ class Quiz:
 
     def is_correct(self, answer):
         return answer == self.answer
+
+    def to_dict(self):
+        return {"question": self.question, "choices": self.choices, "answer": self.answer}
+
+    @classmethod
+    def from_dict(cls, data):
+        """state.json의 항목으로 퀴즈를 만든다. 형식이 틀리면 ValueError를 낸다."""
+        try:
+            question, choices, answer = data["question"], data["choices"], data["answer"]
+        except (KeyError, TypeError) as error:
+            raise ValueError(f"퀴즈 항목에 필요한 값이 없습니다: {error}") from error
+        if not (isinstance(question, str) and question.strip()):
+            raise ValueError("문제는 비어 있지 않은 문자열이어야 합니다")
+        if not (
+            isinstance(choices, list)
+            and len(choices) == cls.CHOICE_COUNT
+            and all(isinstance(choice, str) and choice.strip() for choice in choices)
+        ):
+            raise ValueError(f"선택지는 문자열 {cls.CHOICE_COUNT}개여야 합니다")
+        if type(answer) is not int or not 1 <= answer <= cls.CHOICE_COUNT:
+            raise ValueError(f"정답은 1-{cls.CHOICE_COUNT} 사이의 정수여야 합니다")
+        return cls(question, choices, answer)
