@@ -95,7 +95,8 @@ class QuizGame:
         print("2. 퀴즈 추가")
         print("3. 퀴즈 목록")
         print("4. 점수 확인")
-        print("5. 종료")
+        print("5. 퀴즈 삭제")
+        print("6. 종료")
         print(LINE)
 
     def handle_choice(self, choice):
@@ -108,6 +109,8 @@ class QuizGame:
         elif choice == 4:
             self.show_score()
         elif choice == 5:
+            self.delete_quiz()
+        elif choice == 6:
             self.save()
             print("👋 게임을 종료합니다.")
             self.running = False
@@ -189,6 +192,20 @@ class QuizGame:
             print(f"[{number}] {quiz.question}")
         print(THIN_LINE)
 
+    def delete_quiz(self):
+        """목록에서 번호를 골라 퀴즈를 지운다. 0을 고르면 취소한다."""
+        if not self.quizzes:
+            print("📭 삭제할 퀴즈가 없습니다.")
+            return
+        self.list_quizzes()
+        number = read_number("삭제할 번호 (0: 취소): ", 0, len(self.quizzes))
+        if number == 0:
+            print("↩️ 삭제를 취소했습니다.")
+            return
+        removed = self.quizzes.pop(number - 1)
+        self.save()
+        print(f"🗑️ 삭제했습니다: {removed.question}")
+
     def show_score(self):
         if self.best_score is None:
             print("📭 아직 퀴즈를 풀지 않았습니다.")
@@ -204,7 +221,7 @@ class QuizGame:
         try:
             while self.running:
                 self.show_menu()
-                self.handle_choice(read_number("선택: ", 1, 5))
+                self.handle_choice(read_number("선택: ", 1, 6))
         except (KeyboardInterrupt, EOFError):
             print("\n👋 입력이 중단되어 저장 후 게임을 종료합니다.")
             self.save()
