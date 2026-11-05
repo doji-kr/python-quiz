@@ -1,0 +1,20 @@
+{
+  "title": "python-quiz",
+  "tagline": "정답으로 도치를 먹인다. 브라우저 터미널에서 푸는 파이썬 퀴즈.",
+  "description": "dotch-1의 도치가 터미널로 왔다. 접속한 모두가 같은 도치와 같은 퀴즈 목록을 본다. 정답을 맞히면 밥 하트가 차고, 전부 맞히면 기분 하트가 찬다. 아무도 풀지 않아 두 하트가 빈 채로 하루가 지나면 도치는 떠난다. 표준 라이브러리만 쓴 Python 콘솔 프로그램을 ttyd로 그대로 띄웠다.",
+  "categories": ["Puzzle"],
+  "price": 0,
+  "releasedAt": "2026-11-05",
+  "featured": false,
+  "playUrl": "__PLAY_URL__",
+  "version": "1.0.0",
+  "engine": "Python 3.13 · ttyd (독립 서버)",
+  "players": "공유 서버 — 접속한 모두가 같은 도치를 본다",
+  "input": ["keyboard"],
+  "controls": [
+    { "action": "메뉴와 정답 번호 선택", "keys": ["1", "2", "3", "4"], "pad": [] },
+    { "action": "입력 확정", "keys": ["Enter"], "pad": [] },
+    { "action": "풀이 중 힌트 보기 (-5점)", "keys": ["H"], "pad": [] },
+    { "action": "저장 후 종료", "keys": ["Ctrl", "C"], "pad": [] }
+  ]
+}

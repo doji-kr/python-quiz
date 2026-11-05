@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>python-quiz</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #10140f; }
+</style>
+</head>
+<body>
+<!--
+  python-quiz는 정적 빌드가 아니라 ttyd 서버에서 도는 콘솔 게임이다. 이 파일은 8bit
+  스캐너의 플레이 가능 판정(build/index.html 존재)을 위한 자리표시자다. PLAY 버튼은
+  manifest.json의 playUrl로 바로 이동한다.
+-->
+<script>
+  location.replace("__PLAY_URL__");
+</script>
+<noscript>
+  <a href="__PLAY_URL__">python-quiz 플레이하기</a>
+</noscript>
+</body>
+</html>
