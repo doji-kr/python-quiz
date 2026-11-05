@@ -13,6 +13,9 @@ class QuizGame:
 
     def __init__(self):
         self.quizzes = create_default_quizzes()
+        self.best_score = None
+        self.best_correct = 0
+        self.best_total = 0
         self.running = True
 
     def show_menu(self):
@@ -33,6 +36,8 @@ class QuizGame:
             self.add_quiz()
         elif choice == 3:
             self.list_quizzes()
+        elif choice == 4:
+            self.show_score()
         elif choice == 5:
             print("👋 게임을 종료합니다.")
             self.running = False
@@ -53,8 +58,20 @@ class QuizGame:
             if self.ask(quiz, number):
                 correct += 1
         print(LINE)
-        print(f"🏆 결과: {total}문제 중 {correct}문제 정답! ({correct * 100 // total}점)")
+        score = correct * 100 // total
+        print(f"🏆 결과: {total}문제 중 {correct}문제 정답! ({score}점)")
+        if self.update_best(score, correct, total):
+            print("🎉 새로운 최고 점수입니다!")
         print(LINE)
+
+    def update_best(self, score, correct, total):
+        """최고 점수를 넘었으면 갱신하고 True를 돌려준다."""
+        if self.best_score is not None and score <= self.best_score:
+            return False
+        self.best_score = score
+        self.best_correct = correct
+        self.best_total = total
+        return True
 
     def ask(self, quiz, number):
         """한 문제를 출제하고 맞혔는지 돌려준다."""
@@ -85,6 +102,15 @@ class QuizGame:
         for number, quiz in enumerate(self.quizzes, start=1):
             print(f"[{number}] {quiz.question}")
         print(THIN_LINE)
+
+    def show_score(self):
+        if self.best_score is None:
+            print("📭 아직 퀴즈를 풀지 않았습니다.")
+            return
+        print(
+            f"\n🏆 최고 점수: {self.best_score}점 "
+            f"({self.best_total}문제 중 {self.best_correct}문제 정답)\n"
+        )
 
     def run(self):
         """메뉴를 반복한다. Ctrl+C나 입력 종료가 와도 안전하게 끝낸다."""
