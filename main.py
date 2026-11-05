@@ -31,6 +31,8 @@ class QuizGame:
             self.play()
         elif choice == 2:
             self.add_quiz()
+        elif choice == 3:
+            self.list_quizzes()
         elif choice == 5:
             print("👋 게임을 종료합니다.")
             self.running = False
@@ -72,6 +74,17 @@ class QuizGame:
         answer = read_number(f"정답 번호 (1-{Quiz.CHOICE_COUNT}): ", 1, Quiz.CHOICE_COUNT)
         self.quizzes.append(Quiz(question, choices, answer))
         print("\n✅ 퀴즈가 추가되었습니다!\n")
+
+    def list_quizzes(self):
+        """등록된 퀴즈의 문제만 번호와 함께 보여 준다."""
+        if not self.quizzes:
+            print("📭 등록된 퀴즈가 없습니다.")
+            return
+        print(f"\n📋 등록된 퀴즈 목록 (총 {len(self.quizzes)}개)\n")
+        print(THIN_LINE)
+        for number, quiz in enumerate(self.quizzes, start=1):
+            print(f"[{number}] {quiz.question}")
+        print(THIN_LINE)
 
     def run(self):
         """메뉴를 반복한다. Ctrl+C나 입력 종료가 와도 안전하게 끝낸다."""
