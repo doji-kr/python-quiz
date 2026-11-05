@@ -5,6 +5,7 @@ from datetime import datetime
 
 from console import read_number, read_optional_text, read_text
 from default_quizzes import create_default_quizzes
+from pet import Dotch
 from quiz import Quiz
 from storage import StateCorrupted
 
@@ -24,6 +25,7 @@ class QuizGame:
         self.best_correct = 0
         self.best_total = 0
         self.history = []
+        self.pet = Dotch()
         self.running = True
 
     def load(self):
@@ -60,11 +62,13 @@ class QuizGame:
         history = data.get("history", [])
         if not isinstance(history, list) or not all(self.is_record(item) for item in history):
             raise ValueError("history 형식이 올바르지 않습니다")
+        pet = Dotch.from_dict(data["pet"]) if "pet" in data else Dotch()
         self.quizzes = quizzes
         self.best_score = best_score
         self.best_correct = best_correct
         self.best_total = best_total
         self.history = history
+        self.pet = pet
 
     @staticmethod
     def is_record(item):
@@ -86,6 +90,7 @@ class QuizGame:
         self.best_correct = 0
         self.best_total = 0
         self.history = []
+        self.pet = Dotch()
         self.save()
 
     def save(self):
@@ -96,11 +101,16 @@ class QuizGame:
             "best_correct": self.best_correct,
             "best_total": self.best_total,
             "history": self.history,
+            "pet": self.pet.to_dict(),
         }
         try:
             self.store.save(data)
         except OSError as error:
             print(f"⚠️ 저장하지 못했습니다. ({error})")
+
+    @staticmethod
+    def now():
+        return datetime.now().astimezone()
 
     def best_label(self):
         return "최고점수 없음" if self.best_score is None else f"최고점수 {self.best_score}점"
@@ -108,6 +118,8 @@ class QuizGame:
     def show_menu(self):
         print(LINE)
         print("        🎯 도치의 파이썬 퀴즈 🎯")
+        print(LINE)
+        self.pet.show(self.now())
         print(LINE)
         print("1. 퀴즈 풀기")
         print("2. 퀴즈 추가")
@@ -157,6 +169,9 @@ class QuizGame:
         score = max(0, correct * 100 // total - hints * HINT_PENALTY)
         print(f"🏆 결과: {total}문제 중 {correct}문제 정답! ({score}점, 힌트 {hints}회)")
         self.record(score, correct, total, hints)
+        self.pet.reward(correct, correct == total, self.now())
+        if correct:
+            print(f"🍚 도치가 정답 {correct}개만큼 밥을 먹었습니다!")
         if self.update_best(score, correct, total):
             print("🎉 새로운 최고 점수입니다!")
         self.save()
